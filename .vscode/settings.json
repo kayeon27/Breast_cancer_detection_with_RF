@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./BC_detection-env/src"
+    ]
+}
