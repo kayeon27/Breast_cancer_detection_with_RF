@@ -75,11 +75,11 @@ def tune_random_forest(
 ):
     if param_dist is None:
         param_dist = {
-            'n_estimators': randint(10,200),
-            'max_depth': randint(3, 20),
-            'min_samples_split': randint(2, 10),
-            'min_samples_leaf': randint(1, 10),
-            'max_features': ['sqrt', 'log2', None],
+            'n_estimators': randint(100,500),
+            'max_depth': [None]+list(randint(2, 50).rvs(size=10)),
+            'min_samples_split': randint(2, 30),
+            'min_samples_leaf': randint(1, 20),
+            'max_features': ['sqrt', 'log2', 0.5, 0.75],
             'bootstrap': [True, False]
         }
 
@@ -97,7 +97,8 @@ def tune_random_forest(
         verbose=1
         )
     # Fit the search to the data
-    search.fit(X, y)
+    search.fit(X.values if hasattr(X, 'values') else X,
+                y.values if hasattr(y, 'values') else y)
     
     # Print the best parameters and score
     best_model = search.best_estimator_
