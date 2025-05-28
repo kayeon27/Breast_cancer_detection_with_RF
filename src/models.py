@@ -6,7 +6,6 @@ import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, cross_validate
-from src.data_preprocessing import preprocessing_data
 
 #Construire un modèle de forêt aléatoire
 def build_model_rf(
@@ -85,7 +84,7 @@ def tune_random_forest(
 
 
     cv = StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=random_state)
-    # Perform random search 
+    # Effectuer une recherche aléatoire
     search = RandomizedSearchCV (
         estimator=model,
         param_distributions=param_dist,
@@ -96,11 +95,11 @@ def tune_random_forest(
         n_jobs=-1,
         verbose=1
         )
-    # Fit the search to the data
+    # Ajuster la recherche sur les données
     search.fit(X.values if hasattr(X, 'values') else X,
                 y.values if hasattr(y, 'values') else y)
     
-    # Print the best parameters and score
+    # Afficher les meilleurs hyperparamètres et le meilleur score
     best_model = search.best_estimator_
     print("\n Meilleurs hyperparametres :")
     for k, v in search.best_params_.items():
@@ -108,7 +107,7 @@ def tune_random_forest(
 
     print(f"Meilleur score f1 en CV : {search.best_score_:.3f}")
 
-    # Save the best model
+    # Sauvegarder le meilleur modèle
     os.makedirs(os.path.dirname(model_path), exist_ok=True) 
     joblib.dump(best_model, model_path)
     print(f"Meilleur modèle enregistré sous {model_path}")

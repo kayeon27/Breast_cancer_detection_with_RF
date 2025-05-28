@@ -23,17 +23,16 @@ def preprocess_prognostic(test_size=0.2, random_state=42):
         'concave_points_worst', 'symmetry_worst', 'fractal_dimension_worst'
     ]
 
-    # Chargement des données
     df = pd.read_csv("./Data/wpbc.data", header=None)
 
      #Vérifie le nombre de colonnes
     if df.shape[1] != 35:
         raise ValueError(f"Le fichier doit contenir 35 colonnes (ID, Outcome, 30 features, 3 autres). Actuellement : {df.shape[1]}")
 
-    # Définir les noms de colonnes : ID, Outcome, feature_1 à feature_30, autres
+    # Définir les noms de colonnes 
     df.columns = ["ID", "Outcome"] + [f"feature_{i}" for i in range(1, 31)] + ["extra1", "extra2", "extra3"]
 
-    # Convertir la variable cible en 0 (N) et 1 (R)
+    # Convertir la variable cible 
     df["Outcome"] = df["Outcome"].map({"N": 0, "R": 1})
 
     # Sélectionner uniquement les 30 features d'origine

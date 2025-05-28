@@ -41,4 +41,4 @@ def preprocessing_data( test_size : float = 0.2, random_state : int = 42):
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    return X_train , X_test, y_train, y_test, df, X_train_scaled,X_test_scaled
+    return X_train , X_test, y_train, y_test, df, X_train_scaled,X_test_scaled,scaler

@@ -1,11 +1,12 @@
 import os
+import pandas as pd
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.impute import SimpleImputer
 from ucimlrepo import fetch_ucirepo
 import joblib
 import numpy as np
 from sklearn import metrics
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_recall_curve
 from src.test_prep import preprocess_prognostic  
 from src.data_preprocessing import preprocessing_data
 from src.models import build_model_rf, train_model, cross_validation, tune_random_forest
@@ -17,8 +18,10 @@ print("   repertoire courant  :", os.getcwd())
 
 if __name__ == "__main__":
     # Charger et pretraiter les données  
-    X_train , X_test, y_train, y_test, df, X_train_scaled,X_test_scaled = preprocessing_data(test_size=0.2, random_state=42)
+    X_train , X_test, y_train, y_test, df, X_train_scaled,X_test_scaled ,scaler= preprocessing_data(test_size=0.2, random_state=42)
+    joblib.dump(scaler, 'src/scaler.pkl')  # Sauvegarder le scaler si utilisé
     
+
     #concatener les données pour la CV et le tuning
     X =  np.vstack((X_train, X_test))
     y = np.concatenate((y_train, y_test))
@@ -74,7 +77,26 @@ if __name__ == "__main__":
     print("Best model confusion matrix")
     print(confusion_matrix(y_test, y_pred_best))
 
+
+
+    print("################################################################################")
+    print("############################# ajustement du seuil de decision  #############################")
+    y_proba = trained_rf.predict_proba(X_test)[:,1]
+
+    # Calculer les courbes de precision et de rappel pour different seuils
+    precision, recall, thresholds = precision_recall_curve(y_test, y_proba)
     
+    optimal_threshold = 0.4
+
+    #appliquer le nouveau seuil
+    y_pred_adjusted = (y_proba >= optimal_threshold).astype(int)
+
+    print("Seuil ajusté utilisé:", optimal_threshold)
+    print("Matrice de confusion après ajustement du seuil :\n")
+    print( confusion_matrix(y_test, y_pred_adjusted))
+    print("Classification Report après ajustement du seuil :\n")
+    print(classification_report(y_test, y_pred_adjusted))
+
 
 print("################################################################################")
 print("############################# Évaluation du modèle sur le jeu Prognostic #############################")
