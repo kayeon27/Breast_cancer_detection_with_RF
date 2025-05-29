@@ -1,69 +1,84 @@
 import joblib
 import pandas as pd
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+import streamlit as st
 from typing import List
 import numpy as np
 
+
 #charger le model
-model_path = "src/random_forest_model.pkl"
-scaler_path = "src/scaler.pkl"
+model_path = "random_forest_model.pkl"
+scaler_path = "scaler.pkl"
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)  # Charger le scaler si utilisé
 
 #Charger la liste des features dans l'ordre
-df = pd.read_csv("Data/data.csv", sep=';')
-feature_name = df.drop (columns=["id", "diagnosis"]).columns.tolist()
+df = pd.read_csv("../Data/data.csv", sep=';')
+FEATURE_NAMES = [c for c in df.columns if c not in ("id", "diagnosis") ]
 
-#definir le format de la requete
-class predict_request(BaseModel):
-    data: List[float] = Field(..., 
-                                  description=f"Liste de {len(feature_name)} valeurs des features dans l'ordre {feature_name}")
-    
 
-#definir le format de la réponse
-class predict_response(BaseModel):
-    predicted_class  : int = Field(..., description="0 = saint, 1 = malade")
-    malignant_probability : float = Field(..., description="probabilié d'etre malade")
-
-#Initialiser FastApi
-app = FastAPI(
-    title="Breast Cancer Prediction API",
-    description="API pour predire si un patient est malade (cancer du sein).",
-    version="1.0"
+#Titre et description
+st.title("Breast Cancer Prediction ")
+st.markdown("Entrez les **30 caractéristiques** du patient pour savoir s'il est prédit comme **malade** ou **sain**."
 )
 
-@app.get("/", tags=["root"])
-def read_root():
-    return {
-        "message": "Bienvenue ! Pour prédire, faites POST /predict. Voir /docs pour l’interface interactive."
-    }
+#Choix de l'input
+mode = st.radio("Mode d'entrée" , ("Manuel","fichier CSV"), key= "mode_selector")
+if mode == "Manuel":
+    st.subheader("Entrée manuelle des caractéristiques")
+    #afficher un slider ou input numerique pour chaque feature 
+    inputs ={}
+    for idx, feature in enumerate(FEATURE_NAMES):
+          #ajoute une clé unique/feature
+        inputs[feature]= st.number_input(
+            label= feature, 
+            value = 0.0, 
+            format = "%.4f",
+            key= f"input_{idx}"
+            )
 
+        #quand l'utilisateur clique
+    if st.button("Predire (manuel)", key = "btn_manual_pred"):
+            #construire le tableau et le scaler
+            x = np.array([inputs[f] for f in FEATURE_NAMES]).reshape(1, -1)
+            x_scaled = scaler.transform(x)
+            
+            #faire la prédiction
+            proba = model.predict_proba(x_scaled)[0,1]
+            pred = model.predict(x_scaled)[0]
+            st.success(f"Prédiction : **{'Malade' if pred ==1 else 'Sain'}**")
+            st.write(f"Probabilité de malignité : {proba:.3f}")
 
-@app.post("/predict", response_model = predict_response)
-def predict(req : predict_request):
-    #verifier le nombre de features
-    if len(req.data) != len(feature_name):
-        raise HTTPException(
-            status_code = 400,
-            detail = f"le nombre de features doit etre {len(feature_name)}, mais {len(req.data)}a eté fourni."
+else: 
+    #mode fichier CSV
+    st.subheader("Chargement d'un fichier CSV")
+    uploaded_file = st.file_uploader(
+        label="Chargez un CSV avec les colonnes suivantes : ", 
+        type = ["csv"], 
+        key = "uploader_csv"
         )
-    
-    #construire le tableau et le scaler
-    x = np.array(req.data, dtype=float).reshape(1, -1)
-    try:
-        x_scaled = scaler.transform(x)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur de transformation des données: {e}"
-        )
-    
-    #faire la prédiction
-    proba = model.predict_proba(x_scaled)[0,1] # Probabilité d'être malade
-    pred = int(model.predict(x_scaled)[0])  # Prédiction de la classe (0 ou 1)
-
-    return predict_response(
-        predicted_class = pred,
-        malignant_probability = float(proba)
-    )
+    st.caption("colonnes attendus : "+ ",".join(FEATURE_NAMES))
+    if uploaded_file is not None:
+        #lire le fichier csv
+        df = pd.read_csv(uploaded_file, sep=';' ,engine='python')
+        #verifier les colonnes
+        missing = set(FEATURE_NAMES) - set(df.columns)
+        if missing: 
+            st.error(f"Colonnes manquantes : {missing}")
+        else: 
+            if st.button("Prédire batch" , key= "btn_batch_pred"):
+                X = df[FEATURE_NAMES].values
+                #scaler les données
+                X_scaled = scaler.transform(X)
+                #faire la prédiction
+                preds = model.predict(X_scaled)
+                probs = model.predict_proba(X_scaled)[:, 1]
+                df["predicted_class"] = preds
+                df["malignant_probability"] = probs
+                st.dataframe(df)
+                st.download_button(
+                    label="Télécharger les résultats CSV",
+                    data=df.to_csv(index=False).encode('utf-8'),
+                    file_name="predictions.csv",
+                    mime = "text/csv",
+                    key= "btn_download_csv"
+                )
