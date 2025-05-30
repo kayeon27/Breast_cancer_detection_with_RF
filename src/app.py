@@ -1,3 +1,4 @@
+import os
 import joblib
 import pandas as pd
 import streamlit as st
@@ -5,14 +6,18 @@ from typing import List
 import numpy as np
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 #charger le model
-model_path = "random_forest_model.pkl"
-scaler_path = "scaler.pkl"
+model_path = os.path.join(BASE_DIR,"random_forest_model.pkl")
+scaler_path = os.path.join(BASE_DIR,"scaler.pkl")
+data_path = os.path.join(BASE_DIR, "../Data/data.csv")
+
 model = joblib.load(model_path)
-scaler = joblib.load(scaler_path)  # Charger le scaler si utilisé
+scaler = joblib.load(scaler_path)  # Charger le scaler
 
 #Charger la liste des features dans l'ordre
-df = pd.read_csv("../Data/data.csv", sep=';')
+df = pd.read_csv(data_path, sep=';')
 FEATURE_NAMES = [c for c in df.columns if c not in ("id", "diagnosis") ]
 
 
