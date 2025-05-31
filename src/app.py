@@ -9,7 +9,7 @@ import numpy as np
 #charger le model
 model_path = os.path.join("./src/random_forest_model.pkl")
 scaler_path = os.path.join("./src/scaler.pkl")
-data_path = os.path.join("../../Data/data.csv")
+data_path = os.path.join("./Data/data.csv")
 
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)  # Charger le scaler
