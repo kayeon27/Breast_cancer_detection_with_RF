@@ -6,21 +6,10 @@ from typing import List
 import numpy as np
 
 
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 #charger le model
-model_path = os.path.join(BASE_DIR,"random_forest_model.pkl")
-scaler_path = os.path.join(BASE_DIR,"scaler.pkl")
-data_path = os.path.join(BASE_DIR, "../Data/data.csv")
-
-st.write("BASE_DIR:", BASE_DIR)
-st.write("MODEL_PATH:", model_path)
-st.write("SCALER_PATH:", scaler_path)
-st.write("DATA_PATH:", data_path)
-
-
+model_path = os.path.join("./src/random_forest_model.pkl")
+scaler_path = os.path.join("./src/scaler.pkl")
+data_path = os.path.join("../Data/data.csv")
 
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)  # Charger le scaler
